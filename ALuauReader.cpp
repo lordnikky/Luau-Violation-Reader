@@ -16,7 +16,7 @@ namespace off {
 
 // uhm, im lazy to auto find offsets runtime :freezing_face:, so ill just drop em every build or sum
 
-static HANDLE    hProc    = nullptr;
+static HANDLE hProc = nullptr;
 static uintptr_t baseAddr = 0;
 
 template<typename T>
@@ -185,7 +185,7 @@ int main() {
         }
 
         std::cout << "violations: 0x" << std::hex << v
-                  << (v == 0x7 ? " clean" : " detected") << "\n";
+                  << (v == 0x7 ? " clean" : " (detected)") << "\n";
 
         Sleep(1000);
     }
