@@ -12,6 +12,9 @@ Educational purposes only, author is not responsible for any consequences.
 Contact info:
 
 Discord: `lordnikky`
+
 Email: [nikky@nikky.me](mailto:nikky@nikky.me)
+
+Server: https://discord.gg/skidding
 
 Author will co-operate under any circumstances with Roblox representatives. Please do not take down the repository, contact me instead, I will take it down myself.
