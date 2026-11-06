@@ -11,6 +11,8 @@ I'll drop on how to get the needed offsets today. Sorry
 
 <img width="374" height="106" alt="image" src="https://github.com/user-attachments/assets/933eb1b3-a21c-499f-9604-c35fe0e0ba42" />
 
+(xeno and jjsploit are detected 🤭)
+
 Educational purposes only, author is not responsible for any consequences.
 
 Contact info:
