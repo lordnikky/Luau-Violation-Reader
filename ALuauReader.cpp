@@ -4,15 +4,14 @@
 #include <iostream>
 
 namespace off {
-    // version-5a21b87bbc2641cf
-    constexpr uintptr_t dm_arbiter = 0x8D06600;
+    constexpr uintptr_t dm_arbiter = 0x8eb6960; // this is just a datamodel idk why i named it an arbiter
     constexpr uintptr_t arbiter_to_dm = 0x1F0;
     constexpr uintptr_t facets = 0x98;
-    constexpr uintptr_t facets_end = 0xA0;
-    constexpr uintptr_t global_state = 0x220;
-    constexpr uintptr_t actor_state = 0x530;
-    constexpr uintptr_t l_global = 0x38;
-    constexpr uintptr_t registry_free = 0x628;
+    constexpr uintptr_t facets_end = 0xA0; // im not THAT sure in it but it seems to be correct
+    constexpr uintptr_t global_state = 0x210;
+    constexpr uintptr_t actor_state = 0x520;
+    constexpr uintptr_t l_global = 0x50;
+    constexpr uintptr_t registry_free = 0x640;
 }
 
 // uhm, im lazy to auto find offsets runtime :freezing_face:, so ill just drop em every build or sum
@@ -160,19 +159,10 @@ int main() {
     }
 
     hProc = OpenProcess(PROCESS_VM_READ | PROCESS_QUERY_INFORMATION, FALSE, roblox_pid);
-    if (!hProc) {
-        std::cout << "ERROR: OpenProcess failed. Error code: 0x" << std::hex << GetLastError() << std::dec << "\n";
-        std::cout << "Try running this as Administrator.\n";
-        return 1;
-    }
+    if (!hProc) return 1;
 
     baseAddr = module_base(roblox_pid, "RobloxPlayerBeta.exe");
-    if (!baseAddr) {
-        std::cout << "ERROR: Failed to find module base.\n";
-        return 1;
-    }
-
-    std::cout << "Successfully attached to Roblox (PID: " << roblox_pid << "). Monitoring...\n";
+    if (!baseAddr) return 1;
 
     for (;;) {
         uintptr_t arbiter = 0;
@@ -197,8 +187,8 @@ int main() {
             continue;
         }
 
-        std::cout << "Violations: 0x" << std::hex << v 
-                  << std::dec << (v == 0x7 ? " (clean)" : " (detected)") << "\n";
+        std::cout << "Violations: 0x" << std::hex << v << std::dec
+                  << (v == 0x7 ? " (clean)" : " (detected)") << "\n";
 
         Sleep(1000);
     }
