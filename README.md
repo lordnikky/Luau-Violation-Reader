@@ -2,6 +2,8 @@
 
 An educational memory analysis tool, designed to inspect Luau security bits.
 
+# Not updated
+
 I'll drop on how to get the needed offsets today. Sorry 
 
 <img width="546" height="609" alt="image" src="https://github.com/user-attachments/assets/e302e565-40d7-4025-a965-78fb674b7ab0" />
