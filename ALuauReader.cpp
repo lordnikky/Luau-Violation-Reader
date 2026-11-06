@@ -4,7 +4,8 @@
 #include <iostream>
 
 namespace off {
-    constexpr uintptr_t dm_arbiter = 0x8d06600;
+    // version-5a21b87bbc2641cf
+    constexpr uintptr_t dm_arbiter = 0x8D06600;
     constexpr uintptr_t arbiter_to_dm = 0x1F0;
     constexpr uintptr_t facets = 0x98;
     constexpr uintptr_t facets_end = 0xA0;
@@ -153,13 +154,25 @@ static uint32_t are_we_dtc(uintptr_t sc, bool& ok) {
 
 int main() {
     DWORD roblox_pid = pid("RobloxPlayerBeta.exe");
-    if (!roblox_pid) return 1;
+    if (!roblox_pid) {
+        std::cout << "ERROR: RobloxPlayerBeta.exe not found.\n";
+        return 1;
+    }
 
     hProc = OpenProcess(PROCESS_VM_READ | PROCESS_QUERY_INFORMATION, FALSE, roblox_pid);
-    if (!hProc) return 1;
+    if (!hProc) {
+        std::cout << "ERROR: OpenProcess failed. Error code: 0x" << std::hex << GetLastError() << std::dec << "\n";
+        std::cout << "Try running this as Administrator.\n";
+        return 1;
+    }
 
     baseAddr = module_base(roblox_pid, "RobloxPlayerBeta.exe");
-    if (!baseAddr) return 1;
+    if (!baseAddr) {
+        std::cout << "ERROR: Failed to find module base.\n";
+        return 1;
+    }
+
+    std::cout << "Successfully attached to Roblox (PID: " << roblox_pid << "). Monitoring...\n";
 
     for (;;) {
         uintptr_t arbiter = 0;
@@ -179,13 +192,13 @@ int main() {
         uint32_t v = are_we_dtc(sc, ok);
 
         if (!ok) {
-            std::cout << "failed to read state\n";
+            std::cout << "Failed to read state.\n";
             Sleep(500);
             continue;
         }
 
-        std::cout << "violations: 0x" << std::hex << v
-                  << (v == 0x7 ? " clean" : " (detected)") << "\n";
+        std::cout << "Violations: 0x" << std::hex << v 
+                  << std::dec << (v == 0x7 ? " (clean)" : " (detected)") << "\n";
 
         Sleep(1000);
     }
