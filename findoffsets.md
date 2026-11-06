@@ -1,6 +1,6 @@
 # dm_arbiter
 
-it's just a datamodel, find it on https://offsets.imtheo
+it's just a datamodel, find it on https://offsets.imtheo.lol/offsets.hpp
 
 # arbiter_to_dm 
 
