@@ -7,7 +7,7 @@ namespace off {
     constexpr uintptr_t dm_arbiter = 0x8eb6960; // this is just a datamodel idk why i named it an arbiter
     constexpr uintptr_t arbiter_to_dm = 0x1F0;
     constexpr uintptr_t facets = 0x98;
-    constexpr uintptr_t facets_end = 0xAO; // im not THAT sure in it but it seems to be correct
+    constexpr uintptr_t facets_end = 0xA0; // im not THAT sure in it but it seems to be correct
     constexpr uintptr_t global_state = 0x210;
     constexpr uintptr_t actor_state = 0x520;
     constexpr uintptr_t l_global = 0x50;
