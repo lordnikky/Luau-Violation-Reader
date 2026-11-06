@@ -2,7 +2,7 @@
 
 An educational memory analysis tool, designed to inspect Luau security bits.
 
-# Not updated
+# Updated to version-f0ea5da9412f4e35 (latest)
 
 I'll drop on how to get the needed offsets today. Sorry 
 
