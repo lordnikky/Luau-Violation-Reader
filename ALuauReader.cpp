@@ -185,7 +185,7 @@ int main() {
         }
 
         std::cout << "violations: 0x" << std::hex << v
-                  << (v == 0x7 ? " clean" : " (detected)") << "\n";
+                  << (v == 0x7 ? " (clean)" : " (detected)") << "\n";
 
         Sleep(1000);
     }
