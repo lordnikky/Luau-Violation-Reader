@@ -120,10 +120,11 @@ static uintptr_t script_context(uintptr_t dm) {
     return 0;
 }
 
-static bool get_security(uintptr_t stateAddr, int bit, bool& ok) {
+static bool state_bits(uintptr_t stateAddr, uint32_t& bits) {
+    bits = 0x7;
+
     uintptr_t L = 0;
-    ok = decrypt_state(stateAddr, L);
-    if (!ok) return false;
+    if (!decrypt_state(stateAddr, L)) return false;
     if (!L) return true;
 
     uintptr_t g = 0;
@@ -132,23 +133,24 @@ static bool get_security(uintptr_t stateAddr, int bit, bool& ok) {
     uint32_t flags = 0;
     if (!read_mem(g + off::registry_free, flags)) return false;
 
-    return (flags >> bit) & 1u;
+    bits = (flags >> 28) & 0x7u;
+    return true;
 }
 
-static uint32_t are_we_dtc(uintptr_t sc, bool& ok) {
-    ok = true;
-    uint32_t mask = 0;
+static uint32_t are_we_dtc(uintptr_t sc, bool& ok, uint32_t& gBits, uint32_t& aBits) {
+    gBits = 0;
+    aBits = 0;
+    bool gOk = state_bits(sc + off::global_state, gBits);
+    bool aOk = state_bits(sc + off::actor_state, aBits);
+    ok = gOk && aOk;
+    return ok ? (gBits & aBits) : 0;
+}
 
-    for (int i = 0; i < 3; ++i) {
-        bool okA = false, okB = false;
-        bool a = get_security(sc + off::global_state, 28 + i, okA);
-        bool b = get_security(sc + off::actor_state,  28 + i, okB);
-
-        if (!okA || !okB) { ok = false; return 0; }
-        if (a && b) mask |= (1u << i);
-    }
-
-    return mask;
+static const char* bit_tag(unsigned bit) {
+    if (bit == 28) return "vm-operand";
+    if (bit == 29) return "gc-object";
+    if (bit == 30) return "bytecode-sig";
+    return "?";
 }
 
 int main() {
@@ -176,17 +178,33 @@ int main() {
         }
 
         bool ok = false;
-        uint32_t v = are_we_dtc(sc, ok);
+        uint32_t g = 0, a = 0;
+        uint32_t v = are_we_dtc(sc, ok, g, a);
 
         if (!ok) {
-            std::cout << "failed to read state\n";
+            std::cout << "failed to read state\n" << std::flush;
             Sleep(500);
             continue;
         }
 
         std::cout << "violations: 0x" << std::hex << v
-                  << (v == 0x7 ? " (clean)" : " (detected)") << "\n";
+                  << (v == 0x7 ? " (clean)" : " (detected)")
+                  << " g=0x" << g << " a=0x" << a << std::dec;
 
+        uint32_t cleared = (~v) & 0x7u;
+        if (cleared) {
+            std::cout << " cleared=";
+            bool first = true;
+            for (int i = 0; i < 3; ++i) {
+                if (cleared & (1u << i)) {
+                    if (!first) std::cout << ",";
+                    std::cout << bit_tag(28 + i) << "(" << (28 + i) << ")";
+                    first = false;
+                }
+            }
+        }
+
+        std::cout << "\n" << std::flush;
         Sleep(1000);
     }
 
