@@ -4,14 +4,14 @@
 #include <iostream>
 
 namespace off {
-    constexpr uintptr_t dm_arbiter = 0x8eb6960; // this is just a datamodel idk why i named it an arbiter
+    constexpr uintptr_t dm_arbiter = 0x8f8e968; // this is just a datamodel idk why i named it an arbiter
     constexpr uintptr_t arbiter_to_dm = 0x1F0;
     constexpr uintptr_t facets = 0x98;
     constexpr uintptr_t facets_end = 0xA0;
-    constexpr uintptr_t global_state = 0x210;
-    constexpr uintptr_t actor_state = 0x520;
-    constexpr uintptr_t l_global = 0x50;
-    constexpr uintptr_t registry_free = 0x640;
+    constexpr uintptr_t global_state = 0x3C0;
+    constexpr uintptr_t actor_state = 0x6D0;
+    constexpr uintptr_t l_global = 0x60;
+    constexpr uintptr_t registry_free = 0x630;
 }
 
 // uhm, im lazy to auto find offsets runtime :freezing_face:, so ill just drop em every build or sum
@@ -25,7 +25,7 @@ static bool read_mem(uintptr_t addr, T& out) {
     return ReadProcessMemory(hProc, (LPCVOID)addr, &out, sizeof(T), &n) && n == sizeof(T);
 }
 
-static DWORD pid(const char* name) {
+static DWORD pid(const char* name) {	
     HANDLE snap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
     if (snap == INVALID_HANDLE_VALUE) return 0;
 
@@ -67,13 +67,26 @@ static uintptr_t module_base(DWORD pid, const char* name) {
     return result;
 }
 
+static bool looks_like_ptr(uintptr_t p);
+static bool is_valid_lua_state(uintptr_t L);
+
 static bool decrypt_state(uintptr_t at, uintptr_t& outState) {
     uint32_t lo = 0, hi = 0;
     if (!read_mem(at,     lo)) return false;
     if (!read_mem(at + 4, hi)) return false;
 
     uint32_t key = static_cast<uint32_t>(at);
-    outState = (static_cast<uintptr_t>(key - hi) << 32) | (key - lo);
+    uintptr_t add = (static_cast<uintptr_t>(hi - key) << 32) | (lo - key);
+    uintptr_t sub = (static_cast<uintptr_t>(key - hi) << 32) | (key - lo);
+
+    if (is_valid_lua_state(add)) {
+        outState = add;
+    } else if (is_valid_lua_state(sub)) {
+        outState = sub;
+    } else {
+        outState = add;
+    }
+
     return true;
 }
 
@@ -150,6 +163,7 @@ static const char* bit_tag(unsigned bit) {
     if (bit == 28) return "vm-operand";
     if (bit == 29) return "gc-object";
     if (bit == 30) return "bytecode-sig";
+    if (bit == 31) return "what? how";
     return "?";
 }
 
