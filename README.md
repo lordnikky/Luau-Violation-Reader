@@ -6,10 +6,7 @@ An educational memory analysis tool, designed to inspect Luau security bits.
 
 I'll drop on how to get the needed offsets today. Sorry 
 
-<img width="546" height="609" alt="image" src="https://github.com/user-attachments/assets/e302e565-40d7-4025-a965-78fb674b7ab0" />
-
-
-<img width="374" height="106" alt="image" src="https://github.com/user-attachments/assets/933eb1b3-a21c-499f-9604-c35fe0e0ba42" />
+<img width="827" height="259" alt="image" src="https://github.com/user-attachments/assets/8856dcd3-f2a9-4960-a00b-7d00e653d311" />
 
 (xeno and jjsploit are detected 🤭)
 
