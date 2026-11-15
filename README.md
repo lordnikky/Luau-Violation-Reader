@@ -8,6 +8,8 @@ An educational memory analysis tool, designed to inspect Luau security bits.
 
 (xeno and jjsploit are detected 🤭)
 
+<img width="633" height="110" alt="image" src="https://github.com/user-attachments/assets/9275aa7a-350a-4677-8532-e19df972ad8b" />
+  
 Educational purposes only, author is not responsible for any consequences.
 
 Contact info:
