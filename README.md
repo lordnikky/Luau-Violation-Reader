@@ -2,7 +2,7 @@
 
 An educational memory analysis tool, designed to inspect Luau security bits.
 
-# Updated to version-4ea8e85481e34f46 (latest)
+# Updated to version-2c6fd5e09aaf4cfa (latest)
 
 <img width="827" height="259" alt="image" src="https://github.com/user-attachments/assets/8856dcd3-f2a9-4960-a00b-7d00e653d311" />
 
