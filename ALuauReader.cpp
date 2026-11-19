@@ -2,16 +2,16 @@
 #include <TlHelp32.h>
 #include <cstdint>
 #include <iostream>
+#include <algorithm>
+#include <cstring>
+#include <vector>
 
 namespace off {
-    constexpr uintptr_t dm_arbiter = 0x8e16368; // this is just a datamodel idk why i named it an arbiter
-    constexpr uintptr_t arbiter_to_dm = 0x1F0;
-    constexpr uintptr_t facets = 0x98; // not checked
-    constexpr uintptr_t facets_end = 0xA0;
     constexpr uintptr_t global_state = 0x418;
     constexpr uintptr_t actor_state = 0x708;
     constexpr uintptr_t l_global = 0x68;
     constexpr uintptr_t registry_free = 0x628;
+    constexpr uintptr_t script_context_vtable = 0x7118e40;
 }
 
 // uhm, im lazy to auto find offsets runtime :freezing_face:, so ill just drop em every build or sum
@@ -71,25 +71,42 @@ static bool looks_like_ptr(uintptr_t p);
 static bool is_valid_lua_state(uintptr_t L);
 
 static bool decrypt_state(uintptr_t at, uintptr_t& outState) {
+    outState = 0;
+
     uint32_t lo = 0, hi = 0;
-    if (!read_mem(at,     lo)) return false;
+    if (!read_mem(at, lo)) return false;
     if (!read_mem(at + 4, hi)) return false;
 
-    uint32_t key = static_cast<uint32_t>(at);
-    uintptr_t add = (static_cast<uintptr_t>(hi - key) << 32) | (lo - key);
-    uintptr_t sub = (static_cast<uintptr_t>(key - hi) << 32) | (key - lo);
+    if (lo == 0 && hi == 0) return true;   // empty slot
 
-    if (is_valid_lua_state(add)) {
-        outState = add;
-    } else if (is_valid_lua_state(sub)) {
-        outState = sub;
-    } else {
-        outState = add;
+    const uint32_t key = static_cast<uint32_t>(at);
+    const uint32_t arena = static_cast<uint32_t>(at >> 32);
+
+    const uintptr_t cands[3] = {
+        (static_cast<uintptr_t>(static_cast<uint32_t>(hi ^ key)) << 32) |
+         static_cast<uint32_t>(lo ^ key), // xor
+        (static_cast<uintptr_t>(static_cast<uint32_t>(hi - key)) << 32) |
+         static_cast<uint32_t>(lo - key), // add
+        (static_cast<uintptr_t>(static_cast<uint32_t>(key - hi)) << 32) |
+         static_cast<uint32_t>(key - lo), // sub
+    };
+
+    int best = 0;
+    uintptr_t winner = 0;
+    for (int i = 0; i < 3; ++i) {
+        const uintptr_t L = cands[i];
+        if (!looks_like_ptr(L)) continue;
+        int score = 0;
+        if (static_cast<uint32_t>(L >> 32) == arena) score += 8;
+        if ((L & 0xF) == 0) score += 4;
+        if (is_valid_lua_state(L)) score += 2;
+        if (score > best) { best = score; winner = L; }
     }
 
+    if (best < 10) return false;
+    outState = winner;
     return true;
 }
-
 static bool looks_like_ptr(uintptr_t p) {
     return p >= 0x10000 && p < 0x00007FFFFFFE0000ULL;
 }
@@ -118,21 +135,52 @@ static bool is_script_context(uintptr_t ptr) {
     return s1 || s2;
 }
 
-static uintptr_t script_context(uintptr_t dm) {
-    uintptr_t beg = 0, end = 0;
-    if (!read_mem(dm + off::facets,     beg)) return 0;
-    if (!read_mem(dm + off::facets_end, end)) return 0;
-    if (!looks_like_ptr(beg) || end <= beg) return 0;
+static uintptr_t find_sc_by_vtable() {
+    const uintptr_t want  = baseAddr + off::script_context_vtable;
+    uintptr_t addr  = 0x10000;
+    const uintptr_t limit = 0x00007FFFFFFE0000ULL;
 
-    for (uintptr_t p = beg; p < end; p += 16) {
-        uintptr_t candidate = 0;
-        if (read_mem(p, candidate) && is_script_context(candidate))
-            return candidate;
+    while (addr < limit) {
+        MEMORY_BASIC_INFORMATION mbi{};
+        if (!VirtualQueryEx(hProc, (LPCVOID)addr, &mbi, sizeof(mbi))) break;
+
+        uintptr_t start = (uintptr_t)mbi.BaseAddress;
+        uintptr_t size = (uintptr_t)mbi.RegionSize;
+        if (!size) break;
+
+        DWORD protect = mbi.Protect & 0xFF;
+        bool readable = mbi.State == MEM_COMMIT
+            && !(mbi.Protect & PAGE_GUARD)
+            && (protect == PAGE_READONLY || protect == PAGE_READWRITE
+                || protect == PAGE_WRITECOPY || protect == PAGE_EXECUTE_READ
+                || protect == PAGE_EXECUTE_READWRITE || protect == PAGE_EXECUTE_WRITECOPY);
+
+        if (readable) {
+            const size_t chunk = 1 << 20;
+            std::vector<uint8_t> buf;
+            for (uintptr_t off = 0; off < size; off += chunk) {
+                size_t n = (size_t)std::min<uintptr_t>(chunk, size - off);
+                buf.resize(n);
+                SIZE_T got = 0;
+                if (!ReadProcessMemory(hProc, (LPCVOID)(start + off), buf.data(), n, &got) || got != n)
+                    continue;
+
+                for (size_t i = 0; i + 8 <= n; i += 8) {
+                    uint64_t q = 0;
+                    std::memcpy(&q, buf.data() + i, 8);
+                    if (q != want) continue;
+                    uintptr_t candidate = start + off + i;
+                    if (is_script_context(candidate)) return candidate;
+                }
+            }
+        }
+
+        if (start + size <= addr) break;
+        addr = start + size;
     }
 
     return 0;
 }
-
 static bool state_bits(uintptr_t stateAddr, uint32_t& bits) {
     bits = 0x7;
 
@@ -177,20 +225,16 @@ int main() {
     baseAddr = module_base(roblox_pid, "RobloxPlayerBeta.exe");
     if (!baseAddr) return 1;
 
-    for (;;) {
-        uintptr_t arbiter = 0;
-        if (!read_mem(baseAddr + off::dm_arbiter, arbiter) || !looks_like_ptr(arbiter)) {
-            Sleep(500);
-            continue;
-        }
+    uintptr_t sc = 0;
 
-        uintptr_t sc = script_context(arbiter + off::arbiter_to_dm);
+    for (;;) {
+        if (!sc || !is_script_context(sc))
+            sc = find_sc_by_vtable();
 
         if (!sc) {
             Sleep(500);
             continue;
         }
-
         bool ok = false;
         uint32_t g = 0, a = 0;
         uint32_t v = are_we_dtc(sc, ok, g, a);
