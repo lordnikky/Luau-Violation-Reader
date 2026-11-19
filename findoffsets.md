@@ -10,22 +10,6 @@ string `FLog::LuaAppExperienceController] LuaAppExperienceController: EnableLuaA
 
 that 0x1F0 (or wtv value it will be) is the arbiter
 
-# facets and facets_end
-
-string `GenericChallengeService`, first xref, decompile and go to xrefs of the function
-
-<img width="892" height="629" alt="image" src="https://github.com/user-attachments/assets/24b681e0-760f-44ee-988b-ab41f0aed78a" />
-
-choose the 2 ones on 21-22, well one just do 21, then at the very top you'll find this 
-
-<img width="630" height="275" alt="image" src="https://github.com/user-attachments/assets/6baf453d-6f91-409b-a3e5-583dc8a884ca" />
-
-double click the sub_28D3370 or wtv it'll be, in that function when you're in it press tab
-
-<img width="889" height="350" alt="image" src="https://github.com/user-attachments/assets/9a94bef6-ad84-43e2-9d6b-e222446652ea" />
-
-and there you have it, 0xA0 - facets_end 0x98 - facets.
-
 # global_state, actor_state, l_global, registry_free
 
 `FrameRateManager` last actual xref, not rdata, scroll to the bottom and look for `0.0000009536743f`
@@ -37,3 +21,16 @@ double click that, press tab
 <img width="756" height="567" alt="image" src="https://github.com/user-attachments/assets/f85f215d-4011-4947-90a5-471036ae88fe" />
 
 0x210 - global_state, 0x520 - actor_state, 0x50 - l_global, 0x640 - registry_free 
+
+All of these can be found in Thorium's dumps, their names are
+
+global_State* global - l_global
+SC2LS - global_state
+SC2LSA - actor_state
+registryfree - registry_free
+
+# script_context_vtable
+
+press g and search for RBX::ScriptContext::`vftable', second one will be it 
+
+<img width="815" height="116" alt="image" src="https://github.com/user-attachments/assets/b38383a4-3c5b-4589-80bd-6e71ea6ea9a1" />
