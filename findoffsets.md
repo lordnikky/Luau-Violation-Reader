@@ -25,8 +25,11 @@ double click that, press tab
 All of these can be found in Thorium's dumps, their names are
 
 global_State* global - l_global
+
 SC2LS - global_state
+
 SC2LSA - actor_state
+
 registryfree - registry_free
 
 # script_context_vtable
