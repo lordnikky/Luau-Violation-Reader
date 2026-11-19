@@ -1,4 +1,3 @@
-// DOES NOT DETECT VIOLATIONS, TRYING TO LOCATE THE ISSUE
 #include <Windows.h>
 #include <TlHelp32.h>
 #include <cstdint>
@@ -136,7 +135,9 @@ static bool is_script_context(uintptr_t ptr) {
     return s1 || s2;
 }
 
-static uintptr_t find_sc_by_vtable() {
+static std::vector<uintptr_t> find_all_sc() {
+    std::vector<uintptr_t> out;
+
     const uintptr_t want  = baseAddr + off::script_context_vtable;
     uintptr_t addr  = 0x10000;
     const uintptr_t limit = 0x00007FFFFFFE0000ULL;
@@ -171,7 +172,9 @@ static uintptr_t find_sc_by_vtable() {
                     std::memcpy(&q, buf.data() + i, 8);
                     if (q != want) continue;
                     uintptr_t candidate = start + off + i;
-                    if (is_script_context(candidate)) return candidate;
+                    if (is_script_context(candidate)
+                        && std::find(out.begin(), out.end(), candidate) == out.end())
+                        out.push_back(candidate);
                 }
             }
         }
@@ -180,7 +183,7 @@ static uintptr_t find_sc_by_vtable() {
         addr = start + size;
     }
 
-    return 0;
+    return out;
 }
 static bool state_bits(uintptr_t stateAddr, uint32_t& bits) {
     bits = 0x7;
@@ -226,25 +229,43 @@ int main() {
     baseAddr = module_base(roblox_pid, "RobloxPlayerBeta.exe");
     if (!baseAddr) return 1;
 
-    uintptr_t sc = 0;
+    std::vector<uintptr_t> scs;
+    unsigned tick = 0;
 
     for (;;) {
-        if (!sc || !is_script_context(sc))
-            sc = find_sc_by_vtable();
+        if (scs.empty() || (++tick % 15) == 0) {
+            std::vector<uintptr_t> fresh = find_all_sc();
+            for (size_t i = 0; i < fresh.size(); ++i)
+                if (std::find(scs.begin(), scs.end(), fresh[i]) == scs.end())
+                    scs.push_back(fresh[i]);
+        }
 
-        if (!sc) {
+        if (scs.empty()) {
             Sleep(500);
             continue;
         }
-        bool ok = false;
-        uint32_t g = 0, a = 0;
-        uint32_t v = are_we_dtc(sc, ok, g, a);
 
-        if (!ok) {
+        bool any = false;
+        uint32_t worst = 0x8, wg = 0, wa = 0;
+
+        for (size_t i = 0; i < scs.size(); ++i) {
+            bool ok = false;
+            uint32_t g = 0, a = 0;
+            uint32_t v = are_we_dtc(scs[i], ok, g, a);
+
+            if (!ok) continue;
+            any = true;
+
+            if (v < worst) { worst = v; wg = g; wa = a; }
+        }
+
+        if (!any) {
             std::cout << "failed to read state\n" << std::flush;
             Sleep(500);
             continue;
         }
+
+        uint32_t v = worst, g = wg, a = wa;
 
         std::cout << "violations: 0x" << std::hex << v
                   << (v == 0x7 ? " (clean)" : " (detected)")
