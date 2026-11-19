@@ -4,14 +4,14 @@
 #include <iostream>
 
 namespace off {
-    constexpr uintptr_t dm_arbiter = 0x8f8e968; // this is just a datamodel idk why i named it an arbiter
+    constexpr uintptr_t dm_arbiter = 0x8e16368; // this is just a datamodel idk why i named it an arbiter
     constexpr uintptr_t arbiter_to_dm = 0x1F0;
-    constexpr uintptr_t facets = 0x98;
+    constexpr uintptr_t facets = 0x98; // not checked
     constexpr uintptr_t facets_end = 0xA0;
-    constexpr uintptr_t global_state = 0x3C0;
-    constexpr uintptr_t actor_state = 0x6D0;
-    constexpr uintptr_t l_global = 0x60;
-    constexpr uintptr_t registry_free = 0x630;
+    constexpr uintptr_t global_state = 0x418;
+    constexpr uintptr_t actor_state = 0x708;
+    constexpr uintptr_t l_global = 0x68;
+    constexpr uintptr_t registry_free = 0x628;
 }
 
 // uhm, im lazy to auto find offsets runtime :freezing_face:, so ill just drop em every build or sum
