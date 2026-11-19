@@ -1,3 +1,4 @@
+// DOES NOT DETECT VIOLATIONS, TRYING TO LOCATE THE ISSUE
 #include <Windows.h>
 #include <TlHelp32.h>
 #include <cstdint>
