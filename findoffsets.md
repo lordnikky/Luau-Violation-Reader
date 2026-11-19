@@ -37,3 +37,5 @@ registryfree - registry_free
 press g and search for RBX::ScriptContext::`vftable', second one will be it 
 
 <img width="815" height="116" alt="image" src="https://github.com/user-attachments/assets/b38383a4-3c5b-4589-80bd-6e71ea6ea9a1" />
+
+so it is 0x7118E40
